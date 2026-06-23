@@ -1,0 +1,74 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 42 42% 97%;
+    --foreground: 150 18% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 150 18% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 150 18% 10%;
+    --primary: 156 58% 25%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 42 24% 90%;
+    --secondary-foreground: 150 18% 10%;
+    --muted: 42 20% 91%;
+    --muted-foreground: 150 8% 42%;
+    --accent: 206 35% 88%;
+    --accent-foreground: 150 18% 12%;
+    --destructive: 2 78% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 42 18% 84%;
+    --input: 42 18% 84%;
+    --ring: 156 58% 30%;
+  }
+
+  .dark {
+    --background: 154 23% 8%;
+    --foreground: 42 35% 96%;
+    --card: 154 18% 11%;
+    --card-foreground: 42 35% 96%;
+    --popover: 154 18% 11%;
+    --popover-foreground: 42 35% 96%;
+    --primary: 151 52% 53%;
+    --primary-foreground: 154 23% 8%;
+    --secondary: 154 16% 16%;
+    --secondary-foreground: 42 35% 96%;
+    --muted: 154 16% 16%;
+    --muted-foreground: 42 14% 68%;
+    --accent: 205 26% 22%;
+    --accent-foreground: 42 35% 96%;
+    --destructive: 2 72% 56%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 154 14% 19%;
+    --input: 154 14% 19%;
+    --ring: 151 52% 53%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer utilities {
+  .premium-grid {
+    background-image:
+      linear-gradient(to right, hsl(var(--border) / 0.52) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border) / 0.52) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
