@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, BarChart3, CheckCircle2, FileText, LockKeyhole, Sparkles, WalletCards } from "lucide-react";
+import { ArrowRight, BarChart3, CheckCircle2, FileText, LockKeyhole, Scale, Sparkles, Users, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -104,6 +104,58 @@ export default function HomePage() {
               </Card>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="container py-20">
+        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+          <div>
+            <p className="text-sm font-bold uppercase text-warning">Optimisations détectées</p>
+            <h2 className="mt-3 text-balance text-4xl font-black md:text-5xl">Des leviers concrets, expliqués simplement.</h2>
+            <p className="mt-4 text-muted-foreground">
+              Le moteur reste indicatif, mais il structure déjà les grands sujets à vérifier avant une déclaration ou un rendez-vous fiscal.
+            </p>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {["3e pilier sous-utilisé", "Rachat LPP possible", "Frais de garde", "Frais immobiliers", "Transport et repas", "Dividendes et société", "Assurance maladie", "Comparaison cantonale"].map((item) => (
+              <div key={item} className="flex items-center gap-3 rounded-lg border bg-card p-4 text-sm font-semibold">
+                <CheckCircle2 className="h-5 w-5 text-success" />
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y bg-muted/45 py-20">
+        <div className="container grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardHeader>
+              <Users className="h-7 w-7 text-primary" />
+              <CardTitle>Pour qui ?</CardTitle>
+              <CardDescription>
+                Étudiants, jeunes actifs, familles, couples mariés, célibataires, indépendants, propriétaires, retraités et personnes fortunées.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <LockKeyhole className="h-7 w-7 text-primary" />
+              <CardTitle>Sécurité des données</CardTitle>
+              <CardDescription>
+                Validation des formulaires, consentement explicite pour les leads, headers sécurité et aucune transmission à un tiers dans le prototype.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader>
+              <Scale className="h-7 w-7 text-primary" />
+              <CardTitle>Limites fiscales</CardTitle>
+              <CardDescription>
+                Les calculs sont des estimations. Les barèmes officiels par canton, commune et année fiscale doivent être intégrés avant production.
+              </CardDescription>
+            </CardHeader>
+          </Card>
         </div>
       </section>
 

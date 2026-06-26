@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Download, FileCheck2, Sparkles, TrendingDown } from "lucide-react";
+import { Download, FileCheck2, Send, Sparkles, TrendingDown } from "lucide-react";
 import { CantonComparisonChart, TaxBreakdownChart } from "@/components/charts/tax-charts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,17 +15,19 @@ import { chf } from "@/lib/utils";
 const fallbackInput: QuestionnaireInput = {
   residence: { canton: "VD", commune: "Lausanne", nationality: "Suisse", permit: "citizen", religion: "none" },
   family: { status: "married", partnerIncome: 42000 },
-  children: { count: 2, ages: [4, 8], sharedCustody: false, childcareCosts: 9000 },
+  children: { count: 2, agesText: "4, 8", ages: [4, 8], sharedCustody: false, childcareCosts: 9000 },
   income: { salary: 118000, bonus: 12000, selfEmployed: 0, rental: 0, dividends: 2500, foreign: 0, pensions: 0 },
-  wealth: { bank: 45000, securities: 60000, etf: 35000, bonds: 10000, crypto: 3000, metals: 0, realEstate: 0 },
-  realEstate: { primaryResidence: true, secondaryResidence: false, fiscalValue: 720000, mortgage: 510000, mortgageInterest: 10500, maintenanceCosts: 6500 },
+  wealth: { bank: 45000, securities: 60000, etf: 35000, bonds: 10000, crypto: 3000, metals: 0, realEstate: 0, otherAssets: 0, debts: 0 },
+  realEstate: { ownerStatus: "owner", primaryResidence: true, secondaryResidence: false, fiscalValue: 720000, mortgage: 510000, mortgageInterest: 10500, maintenanceCosts: 6500 },
   pension: { hasSecondPillar: true, lppBuybackPossible: true, lppBuybackAmount: 22000, hasThirdPillar: true, thirdPillarPaid: 3000 },
-  deductions: { transport: 3200, education: 900, remoteWork: 400, donations: 300, healthInsurance: 7400, alimony: 0, medical: 1200 },
-  business: { shareholder: false, independent: false, company: false, holding: false, dividendIncome: 0 }
+  deductions: { transport: 3200, meals: 800, education: 900, remoteWork: 400, donations: 300, healthInsurance: 7400, alimony: 0, medical: 1200 },
+  business: { shareholder: false, independent: false, company: false, holding: false, dividendIncome: 0, professionalExpenses: 0 }
 };
 
 export function DashboardClient() {
   const [input, setInput] = useState<QuestionnaireInput>(fallbackInput);
+  const [leadSent, setLeadSent] = useState(false);
+  const [leadError, setLeadError] = useState("");
   const result = useMemo<TaxResult>(() => analyseTax(input), [input]);
 
   useEffect(() => {
@@ -50,21 +52,45 @@ export function DashboardClient() {
     URL.revokeObjectURL(url);
   }
 
+  async function requestContact(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    setLeadError("");
+    const response = await fetch("/api/leads", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: formData.get("name"),
+        email: formData.get("email"),
+        phone: formData.get("phone"),
+        canton: input.residence.canton,
+        savings: result.potentialSavings,
+        message: formData.get("message"),
+        consent: formData.get("consent") === "on"
+      })
+    });
+
+    if (response.ok) setLeadSent(true);
+    else setLeadError("Impossible d'envoyer la demande. Vérifiez les champs et le consentement.");
+  }
+
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-4">
         <Metric title="Score fiscal" value={`${result.score}/100`} icon={Sparkles} tone="primary" />
-        <Metric title="Impôts estimés" value={chf(result.estimatedTax)} icon={FileCheck2} tone="blue" />
+        <Metric title="Avant optimisation" value={chf(result.estimatedTaxBeforeOptimization)} icon={FileCheck2} tone="blue" />
+        <Metric title="Après optimisation" value={chf(result.estimatedTaxAfterOptimization)} icon={FileCheck2} tone="primary" />
         <Metric title="Économies possibles" value={chf(result.potentialSavings)} icon={TrendingDown} tone="success" />
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm text-muted-foreground">Export</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={exportPdf} className="w-full" variant="swiss"><Download className="h-4 w-4" /> Rapport PDF</Button>
-          </CardContent>
-        </Card>
       </div>
+
+      <Card className="border-amber-200 bg-amber-50/70 dark:border-amber-900 dark:bg-amber-950/20">
+        <CardContent className="flex flex-col justify-between gap-4 pt-5 md:flex-row md:items-center">
+          <p className="text-sm text-muted-foreground">
+            Estimation indicative: OptiTax Suisse n'est pas un conseil fiscal personnalisé. Vérifiez les montants avec les calculateurs officiels ou un expert.
+          </p>
+          <Button onClick={exportPdf} variant="swiss"><Download className="h-4 w-4" /> Export PDF</Button>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
         <Card>
@@ -90,6 +116,22 @@ export function DashboardClient() {
           </CardHeader>
           <CardContent>
             <CantonComparisonChart data={result.comparison} />
+            <div className="mt-4 grid gap-2">
+              {result.comparison.map((item) => (
+                <div key={item.code} className="flex items-center justify-between gap-3 rounded-lg border bg-muted/25 px-3 py-2 text-sm">
+                  <span className="font-medium">{item.canton}</span>
+                  <span className="text-right">
+                    <strong>{chf(item.estimatedTax)}</strong>
+                    <span className={item.delta < 0 ? "ml-2 text-success" : "ml-2 text-muted-foreground"}>
+                      {item.delta < 0 ? `-${chf(Math.abs(item.delta))}` : `+${chf(item.delta)}`}
+                    </span>
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-muted-foreground">
+              Limite: cette comparaison ne tient pas compte des loyers, primes maladie, situation professionnelle, ni du centre de vie fiscal réel.
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -112,6 +154,11 @@ export function DashboardClient() {
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">{rec.description}</p>
                 <p className="mt-3 text-sm font-bold text-success">Économie estimée: {chf(rec.estimatedSavings)}</p>
+                <div className="mt-3 grid gap-2 text-xs text-muted-foreground md:grid-cols-2">
+                  <span><strong>Temps:</strong> {rec.implementationTime}</span>
+                  <span><strong>Éligibilité:</strong> {rec.eligibility.join(", ")}</span>
+                </div>
+                {rec.warning && <p className="mt-3 rounded-lg bg-amber-50 p-3 text-xs text-amber-900 dark:bg-amber-950/30 dark:text-amber-100">{rec.warning}</p>}
                 <Separator className="my-3" />
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   {rec.guide.map((item) => <li key={item} className="flex gap-2"><span>•</span><span>{item}</span></li>)}
@@ -139,6 +186,31 @@ export function DashboardClient() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Être contacté par un fiscaliste</CardTitle>
+          <CardDescription>Envoyez uniquement les informations nécessaires avec consentement explicite.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {leadSent ? (
+            <p className="rounded-lg border bg-muted/40 p-4 text-sm font-medium">Demande envoyée. Vous pourrez brancher ici votre futur partenaire fiscaliste.</p>
+          ) : (
+            <form onSubmit={requestContact} className="grid gap-4 md:grid-cols-2">
+              <input name="name" required placeholder="Nom" className="h-11 rounded-lg border bg-background px-3 text-sm" />
+              <input name="email" type="email" required placeholder="Email" className="h-11 rounded-lg border bg-background px-3 text-sm" />
+              <input name="phone" placeholder="Téléphone optionnel" className="h-11 rounded-lg border bg-background px-3 text-sm" />
+              <input name="message" placeholder="Message optionnel" className="h-11 rounded-lg border bg-background px-3 text-sm" />
+              <label className="flex gap-3 text-sm md:col-span-2">
+                <input name="consent" type="checkbox" required className="mt-1 h-4 w-4 accent-emerald-700" />
+                J'accepte d'être contacté et que ces informations soient enregistrées pour traiter ma demande.
+              </label>
+              {leadError && <p className="text-sm text-red-600 md:col-span-2">{leadError}</p>}
+              <Button variant="swiss" className="md:col-span-2"><Send className="h-4 w-4" /> Demander un contact</Button>
+            </form>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

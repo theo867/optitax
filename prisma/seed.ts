@@ -29,8 +29,8 @@ async function main() {
 
   await prisma.lead.createMany({
     data: [
-      { name: "Nadia Exemple", email: "nadia@example.ch", canton: "VD", savings: 3200 },
-      { name: "Marc Exemple", email: "marc@example.ch", canton: "ZH", savings: 7400 }
+      { name: "Nadia Exemple", email: "nadia@example.ch", phone: "+41 79 000 00 00", canton: "VD", savings: 3200, message: "Souhaite valider le pilier 3a.", consent: true },
+      { name: "Marc Exemple", email: "marc@example.ch", canton: "ZH", savings: 7400, message: "Famille avec bien immobilier.", consent: true }
     ],
     skipDuplicates: true
   });

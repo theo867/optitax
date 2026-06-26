@@ -25,7 +25,8 @@ function Report({ input }: { input: QuestionnaireInput }) {
         <View style={styles.box}>
           <View style={styles.row}><Text>Canton</Text><Text>{input.residence.canton} - {input.residence.commune}</Text></View>
           <View style={styles.row}><Text>Score fiscal</Text><Text>{result.score}/100</Text></View>
-          <View style={styles.row}><Text>Impôts estimés</Text><Text>{chf(result.estimatedTax)}</Text></View>
+          <View style={styles.row}><Text>Impôts avant optimisation</Text><Text>{chf(result.estimatedTaxBeforeOptimization)}</Text></View>
+          <View style={styles.row}><Text>Impôts après optimisation</Text><Text>{chf(result.estimatedTaxAfterOptimization)}</Text></View>
           <View style={styles.row}><Text>Économies potentielles</Text><Text>{chf(result.potentialSavings)}</Text></View>
         </View>
         <View style={styles.section}>
@@ -34,6 +35,9 @@ function Report({ input }: { input: QuestionnaireInput }) {
             <View key={rec.id} style={styles.box}>
               <Text>{rec.title} - {rec.priority} - {chf(rec.estimatedSavings)}</Text>
               <Text style={styles.small}>{rec.description}</Text>
+              <Text style={styles.small}>Temps: {rec.implementationTime}</Text>
+              <Text style={styles.small}>Éligibilité: {rec.eligibility.join(", ")}</Text>
+              {rec.warning ? <Text style={styles.small}>Attention: {rec.warning}</Text> : null}
               {rec.guide.map((item) => <Text key={item} style={styles.small}>• {item}</Text>)}
             </View>
           ))}

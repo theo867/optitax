@@ -18,8 +18,11 @@ export async function POST(request: NextRequest) {
     data: {
       name: payload.data.name,
       email: payload.data.email,
+      phone: payload.data.phone,
       canton: payload.data.canton,
-      savings: Math.round(payload.data.savings)
+      savings: Math.round(payload.data.savings),
+      message: payload.data.message,
+      consent: payload.data.consent
     }
   });
 

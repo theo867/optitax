@@ -19,6 +19,7 @@ model User {
   sessions      Session[]
   simulations   Simulation[]
   leads         Lead[]
+  adminLogs     AdminLog[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 }
@@ -70,6 +71,7 @@ model Simulation {
   score            Int
   input            Json
   result           Json
+  leads            Lead[]
   createdAt        DateTime @default(now())
 
   @@index([userId, createdAt])
@@ -88,12 +90,31 @@ model Lead {
   id        String   @id @default(cuid())
   userId    String?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  simulationId String?
+  simulation   Simulation? @relation(fields: [simulationId], references: [id], onDelete: SetNull)
   name      String
   email     String
+  phone     String?
   canton    String
   savings   Int
+  message   String?
+  consent   Boolean  @default(false)
   status    LeadStatus @default(NEW)
   createdAt DateTime @default(now())
+
+  @@index([canton, createdAt])
+  @@index([simulationId])
+}
+
+model AdminLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
 
 enum Role {

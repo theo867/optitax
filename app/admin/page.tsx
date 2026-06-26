@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Download, Edit3, Users } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -7,13 +8,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams
+}: {
+  searchParams?: Promise<{ canton?: string }>;
+}) {
   const session = await getServerSession(authOptions);
   const role = (session?.user as never as { role?: string })?.role;
   if (role !== "ADMIN") redirect("/login");
+  const params = await searchParams;
+  const selectedCanton = params?.canton || "";
 
   const [leads, simulations, recommendations] = await Promise.all([
-    prisma.lead.findMany({ orderBy: { createdAt: "desc" }, take: 20 }),
+    prisma.lead.findMany({
+      where: selectedCanton ? { canton: selectedCanton } : undefined,
+      orderBy: { createdAt: "desc" },
+      take: 20
+    }),
     prisma.simulation.findMany({ orderBy: { createdAt: "desc" }, take: 20 }),
     prisma.recommendationContent.findMany({ orderBy: { updatedAt: "desc" } })
   ]);
@@ -28,8 +39,23 @@ export default async function AdminPage() {
             Base administrateur prête pour exporter les données, piloter les recommandations et suivre les demandes.
           </p>
         </div>
-        <Button variant="outline"><Download className="h-4 w-4" /> Export CSV</Button>
+        <Button asChild variant="outline">
+          <Link href={`/api/admin/leads?format=csv${selectedCanton ? `&canton=${selectedCanton}` : ""}`}>
+            <Download className="h-4 w-4" /> Export CSV
+          </Link>
+        </Button>
       </div>
+      <form className="mb-6 flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row">
+        <input
+          name="canton"
+          defaultValue={selectedCanton}
+          placeholder="Filtrer par canton, ex. VD"
+          className="h-11 flex-1 rounded-lg border bg-background px-3 text-sm"
+          maxLength={2}
+        />
+        <Button>Filtrer</Button>
+        <Button asChild variant="ghost"><Link href="/admin">Réinitialiser</Link></Button>
+      </form>
       <div className="grid gap-4 md:grid-cols-3">
         <AdminMetric icon={Users} title="Leads" value={String(leads.length)} />
         <AdminMetric icon={Edit3} title="Simulations" value={String(simulations.length)} />

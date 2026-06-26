@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -31,13 +31,13 @@ const steps = [
 const defaultValues: QuestionnaireInput = {
   residence: { canton: "VD", commune: "Lausanne", nationality: "Suisse", permit: "citizen", religion: "none" },
   family: { status: "single", partnerIncome: 0 },
-  children: { count: 0, ages: [], sharedCustody: false, childcareCosts: 0 },
+  children: { count: 0, agesText: "", ages: [], sharedCustody: false, childcareCosts: 0 },
   income: { salary: 95000, bonus: 5000, selfEmployed: 0, rental: 0, dividends: 1200, foreign: 0, pensions: 0 },
-  wealth: { bank: 25000, securities: 30000, etf: 15000, bonds: 0, crypto: 2000, metals: 0, realEstate: 0 },
-  realEstate: { primaryResidence: false, secondaryResidence: false, fiscalValue: 0, mortgage: 0, mortgageInterest: 0, maintenanceCosts: 0 },
+  wealth: { bank: 25000, securities: 30000, etf: 15000, bonds: 0, crypto: 2000, metals: 0, realEstate: 0, otherAssets: 0, debts: 0 },
+  realEstate: { ownerStatus: "tenant", primaryResidence: false, secondaryResidence: false, fiscalValue: 0, mortgage: 0, mortgageInterest: 0, maintenanceCosts: 0 },
   pension: { hasSecondPillar: true, lppBuybackPossible: false, lppBuybackAmount: 0, hasThirdPillar: true, thirdPillarPaid: 2500 },
-  deductions: { transport: 2400, education: 0, remoteWork: 0, donations: 0, healthInsurance: 3200, alimony: 0, medical: 0 },
-  business: { shareholder: false, independent: false, company: false, holding: false, dividendIncome: 0 }
+  deductions: { transport: 2400, meals: 0, education: 0, remoteWork: 0, donations: 0, healthInsurance: 3200, alimony: 0, medical: 0 },
+  business: { shareholder: false, independent: false, company: false, holding: false, dividendIncome: 0, professionalExpenses: 0 }
 };
 
 export function TaxQuestionnaire() {
@@ -49,18 +49,32 @@ export function TaxQuestionnaire() {
     mode: "onChange"
   });
   const values = form.watch();
+  const errors = form.formState.errors;
   const preview = useMemo(() => {
     const parsed = questionnaireSchema.safeParse(values);
-    return analyseTax(parsed.success ? parsed.data : defaultValues);
+    return analyseTax(parsed.success ? normalizeQuestionnaireData(parsed.data) : defaultValues);
   }, [values]);
   const progress = ((step + 1) / steps.length) * 100;
 
+  useEffect(() => {
+    const raw = localStorage.getItem("optitax:draft");
+    if (!raw) return;
+    const parsed = questionnaireSchema.safeParse(JSON.parse(raw));
+    if (parsed.success) form.reset(parsed.data);
+  }, [form]);
+
+  useEffect(() => {
+    const subscription = form.watch((draft) => {
+      localStorage.setItem("optitax:draft", JSON.stringify(draft));
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
   function onSubmit(data: QuestionnaireInput) {
-    const result = analyseTax(data);
-    localStorage.setItem("optitax:last-input", JSON.stringify(data));
+    const normalizedData = normalizeQuestionnaireData(data);
+    const result = analyseTax(normalizedData);
+    localStorage.setItem("optitax:last-input", JSON.stringify(normalizedData));
     localStorage.setItem("optitax:last-result", JSON.stringify(result));
-    localStorage.setItem("fiscalai:last-input", JSON.stringify(data));
-    localStorage.setItem("fiscalai:last-result", JSON.stringify(result));
     router.push("/dashboard");
   }
 
@@ -89,8 +103,8 @@ export function TaxQuestionnaire() {
                     {CANTONS.map((canton) => <option key={canton.code} value={canton.code}>{canton.name}</option>)}
                   </select>
                 </Field>
-                <Field label="Commune"><Input {...form.register("residence.commune")} /></Field>
-                <Field label="Nationalité"><Input {...form.register("residence.nationality")} /></Field>
+                <Field label="Commune ou NPA" error={errors.residence?.commune?.message}><Input {...form.register("residence.commune")} /></Field>
+                <Field label="Nationalité" error={errors.residence?.nationality?.message}><Input {...form.register("residence.nationality")} /></Field>
                 <Field label="Type de permis">
                   <select className="h-11 rounded-lg border bg-background px-3" {...form.register("residence.permit")}>
                     <option value="citizen">Suisse</option><option value="C">Permis C</option><option value="B">Permis B</option>
@@ -120,16 +134,24 @@ export function TaxQuestionnaire() {
 
             {step === 2 && (
               <Grid>
-                <Field label="Nombre d'enfants"><Input type="number" min={0} max={12} {...form.register("children.count")} /></Field>
+                <Field label="Nombre d'enfants" error={errors.children?.count?.message}><Input type="number" min={0} max={12} {...form.register("children.count")} /></Field>
+                <Field label="Âge des enfants"><Input placeholder="ex. 4, 8, 16" {...form.register("children.agesText")} /></Field>
                 <Field label="Frais de garde annuels"><MoneyInput register={form.register("children.childcareCosts")} /></Field>
                 <CheckField label="Garde alternée" register={form.register("children.sharedCustody")} />
               </Grid>
             )}
 
             {step === 3 && <MoneyGrid form={form} prefix="income" labels={["Salaire annuel brut", "Bonus", "Revenus indépendants", "Revenus locatifs", "Dividendes", "Revenus étrangers", "Pensions"]} keys={["salary", "bonus", "selfEmployed", "rental", "dividends", "foreign", "pensions"]} />}
-            {step === 4 && <MoneyGrid form={form} prefix="wealth" labels={["Comptes bancaires", "Titres", "ETF", "Obligations", "Crypto", "Métaux précieux", "Immobilier"]} keys={["bank", "securities", "etf", "bonds", "crypto", "metals", "realEstate"]} />}
+            {step === 4 && <MoneyGrid form={form} prefix="wealth" labels={["Liquidités", "Titres / actions", "ETF", "Obligations", "Crypto", "Métaux précieux", "Immobilier", "Autres actifs", "Dettes"]} keys={["bank", "securities", "etf", "bonds", "crypto", "metals", "realEstate", "otherAssets", "debts"]} />}
             {step === 5 && (
               <Grid>
+                <Field label="Statut immobilier">
+                  <select className="h-11 rounded-lg border bg-background px-3" {...form.register("realEstate.ownerStatus")}>
+                    <option value="tenant">Locataire</option>
+                    <option value="owner">Propriétaire</option>
+                    <option value="both">Locataire et propriétaire</option>
+                  </select>
+                </Field>
                 <CheckField label="Résidence principale" register={form.register("realEstate.primaryResidence")} />
                 <CheckField label="Résidence secondaire" register={form.register("realEstate.secondaryResidence")} />
                 <Field label="Valeur fiscale"><MoneyInput register={form.register("realEstate.fiscalValue")} /></Field>
@@ -147,7 +169,7 @@ export function TaxQuestionnaire() {
                 <Field label="Montant 3a déjà versé"><MoneyInput register={form.register("pension.thirdPillarPaid")} /></Field>
               </Grid>
             )}
-            {step === 7 && <MoneyGrid form={form} prefix="deductions" labels={["Transport", "Formation", "Télétravail", "Dons", "Assurance maladie", "Pension alimentaire", "Frais médicaux"]} keys={["transport", "education", "remoteWork", "donations", "healthInsurance", "alimony", "medical"]} />}
+            {step === 7 && <MoneyGrid form={form} prefix="deductions" labels={["Transport", "Repas", "Formation", "Télétravail", "Dons", "Assurance maladie", "Pension alimentaire", "Frais médicaux"]} keys={["transport", "meals", "education", "remoteWork", "donations", "healthInsurance", "alimony", "medical"]} />}
             {step === 8 && (
               <Grid>
                 <CheckField label="Actionnaire" register={form.register("business.shareholder")} />
@@ -155,6 +177,7 @@ export function TaxQuestionnaire() {
                 <CheckField label="Société" register={form.register("business.company")} />
                 <CheckField label="Holding" register={form.register("business.holding")} />
                 <Field label="Revenus de dividendes société"><MoneyInput register={form.register("business.dividendIncome")} /></Field>
+                <Field label="Frais professionnels"><MoneyInput register={form.register("business.professionalExpenses")} /></Field>
               </Grid>
             )}
 
@@ -200,8 +223,14 @@ function Grid({ children }: { children: React.ReactNode }) {
   return <div className="grid gap-4 md:grid-cols-2">{children}</div>;
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="grid gap-2"><Label>{label}</Label>{children}</div>;
+function Field({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
+  return (
+    <div className="grid gap-2">
+      <Label>{label}</Label>
+      {children}
+      {error ? <p className="text-xs font-medium text-red-600">{error}</p> : null}
+    </div>
+  );
 }
 
 function MoneyInput({ register }: { register: ReturnType<ReturnType<typeof useForm<QuestionnaireInput>>["register"]> }) {
@@ -245,4 +274,19 @@ function Metric({ label, value }: { label: string; value: string }) {
       <p className="mt-1 text-2xl font-black">{value}</p>
     </div>
   );
+}
+
+function normalizeQuestionnaireData(data: QuestionnaireInput): QuestionnaireInput {
+  const ages = data.children.agesText
+    .split(/[,\s;]+/)
+    .map((value) => Number.parseInt(value, 10))
+    .filter((value) => Number.isFinite(value) && value >= 0 && value <= 30);
+
+  return {
+    ...data,
+    children: {
+      ...data.children,
+      ages
+    }
+  };
 }

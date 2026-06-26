@@ -10,12 +10,16 @@ const money = z.preprocess(emptyToZero, z.coerce.number().min(0).max(100_000_000
 const count = z.preprocess(emptyToZero, z.coerce.number().int().min(0).max(12)).default(0);
 const text = (max = 80) =>
   z.preprocess((value) => (typeof value === "string" ? value.trim() : value), z.string().max(max)).default("");
+const requiredText = (max = 80, min = 1) =>
+  z.preprocess((value) => (typeof value === "string" ? value.trim() : value), z.string().min(min).max(max));
+const optionalText = (max = 1000) =>
+  z.preprocess((value) => (value === null || value === undefined ? "" : value), z.string().max(max)).default("");
 
 export const questionnaireSchema = z.object({
   residence: z.object({
     canton: z.string().min(2),
-    commune: text(80),
-    nationality: text(80),
+    commune: requiredText(80, 1),
+    nationality: requiredText(80, 2),
     permit: z.enum(["citizen", "C", "B", "G", "L", "other"]),
     religion: z.enum(["none", "catholic", "protestant", "other"])
   }),
@@ -25,6 +29,7 @@ export const questionnaireSchema = z.object({
   }),
   children: z.object({
     count,
+    agesText: text(120),
     ages: z.array(z.coerce.number().int().min(0).max(30)).default([]),
     sharedCustody: z.boolean().default(false),
     childcareCosts: money
@@ -45,9 +50,12 @@ export const questionnaireSchema = z.object({
     bonds: money,
     crypto: money,
     metals: money,
-    realEstate: money
+    realEstate: money,
+    otherAssets: money,
+    debts: money
   }),
   realEstate: z.object({
+    ownerStatus: z.enum(["tenant", "owner", "both"]).default("tenant"),
     primaryResidence: z.boolean().default(false),
     secondaryResidence: z.boolean().default(false),
     fiscalValue: money,
@@ -64,6 +72,7 @@ export const questionnaireSchema = z.object({
   }),
   deductions: z.object({
     transport: money,
+    meals: money,
     education: money,
     remoteWork: money,
     donations: money,
@@ -76,7 +85,8 @@ export const questionnaireSchema = z.object({
     independent: z.boolean().default(false),
     company: z.boolean().default(false),
     holding: z.boolean().default(false),
-    dividendIncome: money
+    dividendIncome: money,
+    professionalExpenses: money
   })
 });
 
@@ -85,6 +95,9 @@ export type QuestionnaireInput = z.infer<typeof questionnaireSchema>;
 export const leadSchema = z.object({
   email: z.string().email(),
   name: z.string().min(2).max(120),
+  phone: optionalText(40),
   canton: z.string().min(2).max(2),
-  savings: z.coerce.number().min(0)
+  savings: z.coerce.number().min(0),
+  message: optionalText(1000),
+  consent: z.literal(true)
 });
