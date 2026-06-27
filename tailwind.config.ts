@@ -39,9 +39,13 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))"
         },
-        success: "#1f8a5b",
-        warning: "#bd7a10",
-        swiss: "#e53935"
+        success: "#2f6b57",
+        warning: "#9a6b32",
+        swiss: "#142844",
+        navy: "#142844",
+        sand: "#eee8dd",
+        copper: "#9a7046",
+        "copper-light": "#d6ba8b"
       },
       borderRadius: {
         lg: "8px",
@@ -49,7 +53,7 @@ const config: Config = {
         sm: "6px"
       },
       boxShadow: {
-        premium: "0 24px 80px rgba(15, 23, 42, 0.12)"
+        premium: "0 24px 70px rgba(20, 40, 68, 0.10)"
       }
     }
   },

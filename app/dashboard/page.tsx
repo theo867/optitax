@@ -11,8 +11,8 @@ export default function DashboardPage() {
     <main className="container py-10">
       <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <p className="text-sm font-bold uppercase text-warning">Dashboard</p>
-          <h1 className="mt-3 text-4xl font-black md:text-5xl">Votre cockpit fiscal.</h1>
+          <p className="section-kicker">Synthèse fiscale</p>
+          <h1 className="mt-3 font-display text-4xl font-semibold md:text-5xl">Votre tableau de bord fiscal.</h1>
           <p className="mt-4 max-w-3xl text-muted-foreground">
             Estimation indicative, recommandations et comparaison cantonale. À valider avec les données officielles avant décision.
           </p>

@@ -14,7 +14,7 @@ export default async function AdminPage({
   searchParams?: Promise<{ canton?: string }>;
 }) {
   const session = await getServerSession(authOptions);
-  const role = (session?.user as never as { role?: string })?.role;
+  const role = session?.user?.role;
   if (role !== "ADMIN") redirect("/login");
   const params = await searchParams;
   const selectedCanton = params?.canton || "";
@@ -33,8 +33,8 @@ export default async function AdminPage({
     <main className="container py-10">
       <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
-          <p className="text-sm font-bold uppercase text-warning">Administration</p>
-          <h1 className="mt-3 text-4xl font-black md:text-5xl">Leads, contenus et simulations.</h1>
+          <p className="section-kicker">Espace réservé · Administrateur</p>
+          <h1 className="mt-3 font-display text-4xl font-semibold md:text-5xl">Pilotage des leads et simulations.</h1>
           <p className="mt-4 max-w-3xl text-muted-foreground">
             Base administrateur prête pour exporter les données, piloter les recommandations et suivre les demandes.
           </p>
@@ -45,12 +45,12 @@ export default async function AdminPage({
           </Link>
         </Button>
       </div>
-      <form className="mb-6 flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row">
+      <form className="mb-6 flex flex-col gap-3 border border-navy/10 bg-card p-4 sm:flex-row">
         <input
           name="canton"
           defaultValue={selectedCanton}
           placeholder="Filtrer par canton, ex. VD"
-          className="h-11 flex-1 rounded-lg border bg-background px-3 text-sm"
+          className="h-11 flex-1 rounded-md border bg-background px-3 text-sm"
           maxLength={2}
         />
         <Button>Filtrer</Button>
@@ -96,7 +96,7 @@ function AdminMetric({ icon: Icon, title, value }: { icon: typeof Users; title: 
         <CardTitle className="text-sm text-muted-foreground">{title}</CardTitle>
         <Icon className="h-5 w-5 text-primary" />
       </CardHeader>
-      <CardContent><p className="text-3xl font-black">{value}</p></CardContent>
+      <CardContent><p className="font-display text-3xl font-semibold">{value}</p></CardContent>
     </Card>
   );
 }

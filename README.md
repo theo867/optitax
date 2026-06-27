@@ -6,6 +6,7 @@ Application web SaaS d'optimisation fiscale pour résidents suisses.
 
 - Landing page SEO: optimisation fiscale suisse, réduire ses impôts en Suisse, 3e pilier, rachat LPP, fiscalité suisse, impôts cantonaux.
 - Questionnaire multi-étapes: résidence, famille, enfants, revenus, fortune, immobilier, prévoyance, déductions, entreprise.
+- Reconnaissance NPA/commune/canton avec `3280 → Morat / Murten → FR` et structure extensible.
 - Sauvegarde des réponses côté client pour éviter de perdre une simulation en cours.
 - Moteur de règles: 3e pilier, rachat LPP, déductions oubliées, immobilier, placements, dividendes, indépendant, succession, frais médicaux et comparaison cantonale.
 - Dashboard: score fiscal, impôts avant/après optimisation, économies potentielles, graphiques Recharts, checklist.
@@ -26,11 +27,11 @@ Les calculs livrés sont volontairement estimatifs. Les coefficients cantonaux d
 cd outputs/fiscalai-suisse
 cp .env.example .env
 docker compose up -d
-pnpm install
-pnpm prisma:generate
-pnpm prisma:migrate
-pnpm prisma:seed
-pnpm dev
+npm install
+npm run prisma:generate
+npm run prisma:migrate -- --name init
+npm run prisma:seed
+npm run dev
 ```
 
 Ouvrir ensuite `http://localhost:3000`.
@@ -53,11 +54,11 @@ Changez ces valeurs avant toute mise en ligne.
 3. Lancer en local ou CI:
 
 ```bash
-pnpm install
-pnpm prisma:generate
-pnpm prisma:migrate
-pnpm prisma:seed
-pnpm build
+npm ci
+npm run prisma:generate
+npm run prisma:migrate -- --name init
+npm run prisma:seed
+npm run build
 ```
 
 4. Déployer sur Vercel.
@@ -120,6 +121,28 @@ prisma/
   seed.ts
 public/assets/
 ```
+
+## Tester les comptes
+
+PostgreSQL doit être démarré et les migrations doivent avoir été appliquées.
+
+1. Ouvrir `/register`, saisir un nom, un email et un mot de passe de 10 caractères minimum.
+2. Après création, la connexion est automatique et le nom ou l'email apparaît dans le header.
+3. Utiliser `Déconnexion`, puis ouvrir `/login` et reprendre les mêmes identifiants.
+4. L'administration n'apparaît que pour un compte dont le rôle Prisma est `ADMIN`.
+
+Le compte administrateur de démonstration est créé par le seed. Changez immédiatement son mot de passe avant toute exposition publique.
+
+## Données NPA suisses
+
+L'échantillon se trouve dans `lib/swiss-postal-codes.ts`. Il contient plusieurs grandes villes et le cas obligatoire `3280` pour Morat / Murten, canton de Fribourg. Pour une mise en production, remplacez `SWISS_LOCALITIES` par un import versionné du répertoire officiel des localités de la Poste suisse. Conservez le type `SwissLocality` et la fonction `findSwissLocalities` afin de ne pas modifier le questionnaire.
+
+## Tester le PDF
+
+1. Compléter le questionnaire et ouvrir le dashboard.
+2. Cliquer sur `Rapport PDF`.
+3. Vérifier le logo, les quatre indicateurs, les recommandations, la checklist, le disclaimer et la pagination.
+4. Le fichier téléchargé s'appelle `rapport-optitax-suisse.pdf`.
 
 ## Variables d'environnement
 

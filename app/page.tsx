@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, BarChart3, CheckCircle2, FileText, LockKeyhole, Scale, Sparkles, Users, WalletCards } from "lucide-react";
+import { ArrowRight, BarChart3, CheckCircle2, FileText, Landmark, LockKeyhole, Scale, ShieldCheck, Sparkles, Users, WalletCards } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,57 +24,58 @@ const faqs = [
 export default function HomePage() {
   return (
     <main>
-      <section className="premium-grid border-b">
-        <div className="container grid min-h-[calc(100svh-4rem)] items-center gap-10 py-16 lg:grid-cols-[0.96fr_1.04fr]">
-          <div>
-            <Badge variant="warning" className="mb-5">Optimisation fiscale suisse, version SaaS</Badge>
-            <h1 className="max-w-4xl text-balance text-5xl font-black leading-[0.96] tracking-normal md:text-7xl">
+      <section className="relative isolate flex min-h-[min(760px,calc(100svh-4.5rem))] items-center overflow-hidden border-b bg-navy text-white">
+        <Image src="/assets/hero-dashboard.png" fill priority alt="Aperçu du dashboard OptiTax Suisse" className="-z-20 object-cover object-center opacity-25" />
+        <div className="absolute inset-0 -z-10 bg-navy/80" />
+        <div className="container py-20 md:py-28">
+          <div className="max-w-4xl">
+            <Badge className="mb-6 border-copper-light/40 bg-transparent text-copper-light">Fiscalité suisse · Analyse indicative</Badge>
+            <h1 className="max-w-4xl text-balance font-display text-5xl font-semibold leading-[1.02] md:text-7xl">
               Découvrez combien vous pourriez économiser sur vos impôts.
             </h1>
-            <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
+            <p className="mt-7 max-w-2xl text-lg leading-relaxed text-white/72">
               OptiTax Suisse analyse votre canton, famille, revenus, fortune, immobilier et prévoyance
               pour produire une estimation, des optimisations et une checklist claire.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" variant="swiss">
+              <Button asChild size="lg" className="bg-white text-navy hover:bg-sand">
                 <Link href="/questionnaire">
                   Découvrez combien vous pourriez économiser sur vos impôts
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline">
+              <Button asChild size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white">
                 <Link href="/dashboard">Voir le dashboard</Link>
               </Button>
             </div>
-            <div className="mt-8 grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
-              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-success" /> 26 cantons</span>
-              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-success" /> PDF inclus</span>
-              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-success" /> Dark mode</span>
+            <div className="mt-9 grid gap-3 text-sm text-white/65 sm:grid-cols-3">
+              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-copper-light" /> Fiscalité suisse</span>
+              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-copper-light" /> Export PDF professionnel</span>
+              <span className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-copper-light" /> Données confidentielles</span>
             </div>
           </div>
-          <div className="relative">
-            <Image
-              src="/assets/hero-dashboard.png"
-              width={1600}
-              height={1000}
-              priority
-              alt="Aperçu premium du dashboard OptiTax Suisse"
-              className="rounded-lg border shadow-premium"
-            />
-          </div>
+        </div>
+      </section>
+
+      <section className="trust-strip">
+        <div className="container grid gap-4 py-4 text-xs font-semibold text-muted-foreground sm:grid-cols-2 lg:grid-cols-4">
+          <span className="flex items-center gap-2"><LockKeyhole className="h-4 w-4 text-copper" /> Données confidentielles</span>
+          <span className="flex items-center gap-2"><Landmark className="h-4 w-4 text-copper" /> Fiscalité suisse</span>
+          <span className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-copper" /> Simulation indicative</span>
+          <span className="flex items-center gap-2"><Scale className="h-4 w-4 text-copper" /> Aucun conseil personnalisé</span>
         </div>
       </section>
 
       <section className="container py-20">
         <div className="mx-auto max-w-3xl text-center">
-          <p className="text-sm font-bold uppercase text-warning">Comment ça fonctionne</p>
-          <h2 className="mt-3 text-balance text-4xl font-black md:text-5xl">Un parcours simple pour une matière compliquée.</h2>
+          <p className="section-kicker">Comment ça fonctionne</p>
+          <h2 className="mt-3 text-balance font-display text-4xl font-semibold md:text-5xl">Un parcours simple pour une matière complexe.</h2>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-3">
           {["Répondez au questionnaire", "Recevez vos priorités", "Exportez le rapport"].map((title, index) => (
             <Card key={title}>
               <CardHeader>
-                <div className="mb-4 grid h-10 w-10 place-items-center rounded-lg bg-primary text-primary-foreground">{index + 1}</div>
+                <div className="mb-4 grid h-10 w-10 place-items-center bg-navy font-display text-lg text-white">{index + 1}</div>
                 <CardTitle>{title}</CardTitle>
                 <CardDescription>
                   {index === 0 && "Canton, commune, famille, revenus, fortune, immobilier, prévoyance et déductions."}
@@ -90,14 +91,14 @@ export default function HomePage() {
       <section id="fonctionnalites" className="border-y bg-card py-20">
         <div className="container">
           <div className="max-w-3xl">
-            <p className="text-sm font-bold uppercase text-warning">Fonctionnalités</p>
-            <h2 className="mt-3 text-balance text-4xl font-black md:text-5xl">Tout le nécessaire pour un vrai produit SaaS.</h2>
+            <p className="section-kicker">Fonctionnalités</p>
+            <h2 className="mt-3 text-balance font-display text-4xl font-semibold md:text-5xl">Une lecture structurée de votre situation fiscale.</h2>
           </div>
           <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             {features.map((feature) => (
               <Card key={feature.title}>
                 <CardHeader>
-                  <feature.icon className="h-7 w-7 text-primary" />
+                  <feature.icon className="h-7 w-7 text-copper" />
                   <CardTitle className="text-lg">{feature.title}</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm text-muted-foreground">{feature.text}</CardContent>
@@ -110,8 +111,8 @@ export default function HomePage() {
       <section className="container py-20">
         <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
           <div>
-            <p className="text-sm font-bold uppercase text-warning">Optimisations détectées</p>
-            <h2 className="mt-3 text-balance text-4xl font-black md:text-5xl">Des leviers concrets, expliqués simplement.</h2>
+            <p className="section-kicker">Optimisations détectées</p>
+            <h2 className="mt-3 text-balance font-display text-4xl font-semibold md:text-5xl">Des leviers concrets, expliqués simplement.</h2>
             <p className="mt-4 text-muted-foreground">
               Le moteur reste indicatif, mais il structure déjà les grands sujets à vérifier avant une déclaration ou un rendez-vous fiscal.
             </p>
@@ -127,7 +128,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="border-y bg-muted/45 py-20">
+      <section id="securite" className="border-y bg-sand/55 py-20 dark:bg-white/[0.03]">
         <div className="container grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader>
@@ -161,8 +162,8 @@ export default function HomePage() {
 
       <section className="container grid gap-8 py-20 lg:grid-cols-[0.85fr_1.15fr]">
         <div>
-          <p className="text-sm font-bold uppercase text-warning">Simulateur rapide</p>
-          <h2 className="mt-3 text-4xl font-black">Une première intuition en 20 secondes.</h2>
+          <p className="section-kicker">Simulateur rapide</p>
+          <h2 className="mt-3 font-display text-4xl font-semibold">Une première lecture en quelques instants.</h2>
           <p className="mt-4 text-muted-foreground">
             Le questionnaire complet affine ensuite l'estimation et identifie les leviers concrets.
           </p>
@@ -185,18 +186,22 @@ export default function HomePage() {
         </Card>
       </section>
 
-      <section className="border-y bg-muted/45 py-20">
+      <section className="border-y bg-sand/55 py-20 dark:bg-white/[0.03]">
         <div className="container">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="mb-10 max-w-2xl"><p className="section-kicker">Retours d’utilisation</p><h2 className="mt-3 font-display text-4xl font-semibold">Des profils différents, une même exigence de clarté.</h2></div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             {[
-              ["Nadia, 29 ans", "J'ai compris quoi faire avec mon 3e pilier et mes frais de formation."],
-              ["Marc et Elena, famille", "La checklist nous a évité d'oublier les frais de garde et les attestations."],
-              ["Pierre, retraité", "La comparaison cantonale m'a aidé à préparer une discussion sérieuse avant déménagement."]
-            ].map(([name, text]) => (
+              ["Nadia, 29 ans", "Jeune active, Vaud", "Le rapport m’a permis d’identifier les justificatifs à réunir pour mon 3e pilier et ma formation, sans me promettre un résultat irréaliste."],
+              ["Marc et Elena", "Famille, Fribourg", "La checklist nous a aidés à préparer les frais de garde et les attestations avant notre rendez-vous. L’estimation nous a surtout donné les bonnes questions à poser."],
+              ["David, 41 ans", "Indépendant, Genève", "J’ai apprécié la distinction entre pistes simples et sujets à faire valider. La partie frais professionnels m’a servi de base de travail avec ma fiduciaire."],
+              ["Sophie, 52 ans", "Propriétaire, Berne", "Le résumé immobilier est clair et prudent. J’ai pu comparer entretien effectif et déduction forfaitaire avec des documents mieux organisés."],
+              ["Pierre, 63 ans", "Proche de la retraite, Valais", "La comparaison cantonale ne remplace pas un conseil, mais elle m’a aidé à préparer une discussion structurée sur la prévoyance et le futur retrait en capital."]
+            ].map(([name, profile, quote]) => (
               <Card key={name}>
                 <CardHeader>
-                  <CardTitle>{name}</CardTitle>
-                  <CardDescription>{text}</CardDescription>
+                  <CardTitle className="font-display text-xl">{name}</CardTitle>
+                  <p className="text-xs font-semibold uppercase text-copper" style={{ letterSpacing: "0.08em" }}>{profile}</p>
+                  <CardDescription className="pt-3 leading-relaxed">{quote}</CardDescription>
                 </CardHeader>
               </Card>
             ))}
@@ -207,8 +212,8 @@ export default function HomePage() {
       <section className="container py-20">
         <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
           <div>
-            <p className="text-sm font-bold uppercase text-warning">FAQ</p>
-            <h2 className="mt-3 text-4xl font-black">Clair, prudent, utile.</h2>
+            <p className="section-kicker">FAQ</p>
+            <h2 className="mt-3 font-display text-4xl font-semibold">Clair, prudent, utile.</h2>
           </div>
           <div className="grid gap-4">
             {faqs.map(([q, a]) => (
@@ -223,12 +228,13 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="border-t bg-foreground py-10 text-background">
-        <div className="container flex flex-col justify-between gap-4 md:flex-row">
-          <p className="font-bold">OptiTax Suisse</p>
-          <p className="max-w-2xl text-sm opacity-75">
-            Prototype SaaS informatif. Les estimations doivent être validées avec les calculateurs officiels, l'administration fiscale ou un expert.
-          </p>
+      <footer className="border-t border-white/10 bg-navy py-12 text-white">
+        <div className="container grid gap-8 md:grid-cols-[0.65fr_1.35fr]">
+          <div><p className="font-display text-2xl font-semibold">OptiTax Suisse</p><p className="mt-2 text-sm text-copper-light">Créé par Théophile Morel</p></div>
+          <div className="space-y-2 text-sm text-white/65">
+            <p>Les informations sont fournies à titre indicatif et ne constituent pas un conseil fiscal personnalisé.</p>
+            <p>Consultez un fiscaliste ou l’administration compétente pour une analyse complète de votre situation.</p>
+          </div>
         </div>
       </footer>
     </main>

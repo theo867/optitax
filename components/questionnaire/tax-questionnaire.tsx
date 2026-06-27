@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, ArrowRight, Check, FileText } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, FileText, LockKeyhole, MapPin, ShieldCheck } from "lucide-react";
 import { analyseTax } from "@/lib/tax-engine";
 import { CANTONS } from "@/lib/constants";
 import { QuestionnaireInput, questionnaireSchema } from "@/lib/validators";
@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { chf } from "@/lib/utils";
+import { findSwissLocalities } from "@/lib/swiss-postal-codes";
 
 const steps = [
   "Résidence",
@@ -29,7 +30,7 @@ const steps = [
 ];
 
 const defaultValues: QuestionnaireInput = {
-  residence: { canton: "VD", commune: "Lausanne", nationality: "Suisse", permit: "citizen", religion: "none" },
+  residence: { canton: "VD", postalCode: "1000", commune: "Lausanne", nationality: "Suisse", permit: "citizen", religion: "none" },
   family: { status: "single", partnerIncome: 0 },
   children: { count: 0, agesText: "", ages: [], sharedCustody: false, childcareCosts: 0 },
   income: { salary: 95000, bonus: 5000, selfEmployed: 0, rental: 0, dividends: 1200, foreign: 0, pensions: 0 },
@@ -49,6 +50,8 @@ export function TaxQuestionnaire() {
     mode: "onChange"
   });
   const values = form.watch();
+  const postalCode = form.watch("residence.postalCode");
+  const postalMatches = useMemo(() => findSwissLocalities(postalCode ?? ""), [postalCode]);
   const errors = form.formState.errors;
   const preview = useMemo(() => {
     const parsed = questionnaireSchema.safeParse(values);
@@ -57,10 +60,14 @@ export function TaxQuestionnaire() {
   const progress = ((step + 1) / steps.length) * 100;
 
   useEffect(() => {
-    const raw = localStorage.getItem("optitax:draft");
-    if (!raw) return;
-    const parsed = questionnaireSchema.safeParse(JSON.parse(raw));
-    if (parsed.success) form.reset(parsed.data);
+    try {
+      const raw = localStorage.getItem("optitax:draft");
+      if (!raw) return;
+      const parsed = questionnaireSchema.safeParse(JSON.parse(raw));
+      if (parsed.success) form.reset(parsed.data);
+    } catch {
+      localStorage.removeItem("optitax:draft");
+    }
   }, [form]);
 
   useEffect(() => {
@@ -78,6 +85,13 @@ export function TaxQuestionnaire() {
     router.push("/dashboard");
   }
 
+  function applyLocality(postalCodeValue: string) {
+    const match = findSwissLocalities(postalCodeValue)[0];
+    if (!match) return;
+    form.setValue("residence.commune", match.commune, { shouldValidate: true, shouldDirty: true });
+    form.setValue("residence.canton", match.canton, { shouldValidate: true, shouldDirty: true });
+  }
+
   return (
     <div className="grid gap-6 lg:grid-cols-[0.7fr_0.3fr]">
       <Card>
@@ -85,7 +99,7 @@ export function TaxQuestionnaire() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <Badge variant="outline">Étape {step + 1} / {steps.length}</Badge>
-              <CardTitle className="mt-3 text-3xl">{steps[step]}</CardTitle>
+              <CardTitle className="mt-3 font-display text-3xl">{steps[step]}</CardTitle>
               <CardDescription>Les champs peuvent être affinés plus tard depuis votre compte.</CardDescription>
             </div>
             <div className="min-w-52">
@@ -98,12 +112,34 @@ export function TaxQuestionnaire() {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {step === 0 && (
               <Grid>
+                <Field label="NPA" error={errors.residence?.postalCode?.message} hint="La commune et le canton sont reconnus automatiquement.">
+                  <div className="relative">
+                    <MapPin className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-copper" />
+                    <Input
+                      inputMode="numeric"
+                      maxLength={4}
+                      placeholder="ex. 3280"
+                      className="pl-9"
+                      {...form.register("residence.postalCode", {
+                        onChange: (event) => applyLocality(event.target.value)
+                      })}
+                    />
+                  </div>
+                  {postalCode?.length === 4 && postalMatches.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">NPA non présent dans l’échantillon local. Saisissez la commune et le canton manuellement.</p>
+                  ) : null}
+                  {postalMatches.length > 0 ? (
+                    <button type="button" className="flex items-center gap-2 text-left text-xs font-semibold text-success" onClick={() => applyLocality(postalCode)}>
+                      <Check className="h-3.5 w-3.5" /> {postalMatches[0].commune}, canton {postalMatches[0].canton}
+                    </button>
+                  ) : null}
+                </Field>
                 <Field label="Canton">
-                  <select className="h-11 rounded-lg border bg-background px-3" {...form.register("residence.canton")}>
+                  <select className="h-11 rounded-lg border bg-background px-3" {...form.register("residence.canton")}> 
                     {CANTONS.map((canton) => <option key={canton.code} value={canton.code}>{canton.name}</option>)}
                   </select>
                 </Field>
-                <Field label="Commune ou NPA" error={errors.residence?.commune?.message}><Input {...form.register("residence.commune")} /></Field>
+                <Field label="Commune" error={errors.residence?.commune?.message}><Input placeholder="ex. Morat / Murten" {...form.register("residence.commune")} /></Field>
                 <Field label="Nationalité" error={errors.residence?.nationality?.message}><Input {...form.register("residence.nationality")} /></Field>
                 <Field label="Type de permis">
                   <select className="h-11 rounded-lg border bg-background px-3" {...form.register("residence.permit")}>
@@ -134,7 +170,7 @@ export function TaxQuestionnaire() {
 
             {step === 2 && (
               <Grid>
-                <Field label="Nombre d'enfants" error={errors.children?.count?.message}><Input type="number" min={0} max={12} {...form.register("children.count")} /></Field>
+                <Field label="Nombre d'enfants" error={errors.children?.count?.message} hint="Vous pouvez saisir 0. La valeur est limitée à 12."><Input type="number" inputMode="numeric" min={0} max={12} {...form.register("children.count")} /></Field>
                 <Field label="Âge des enfants"><Input placeholder="ex. 4, 8, 16" {...form.register("children.agesText")} /></Field>
                 <Field label="Frais de garde annuels"><MoneyInput register={form.register("children.childcareCosts")} /></Field>
                 <CheckField label="Garde alternée" register={form.register("children.sharedCustody")} />
@@ -200,6 +236,10 @@ export function TaxQuestionnaire() {
       </Card>
 
       <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+        <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+          <span className="flex items-center gap-2 border bg-card p-3"><LockKeyhole className="h-4 w-4 text-copper" /> Données confidentielles</span>
+          <span className="flex items-center gap-2 border bg-card p-3"><ShieldCheck className="h-4 w-4 text-copper" /> Simulation indicative</span>
+        </div>
         <Card>
           <CardHeader>
             <CardTitle>Prévisualisation</CardTitle>
@@ -223,11 +263,12 @@ function Grid({ children }: { children: React.ReactNode }) {
   return <div className="grid gap-4 md:grid-cols-2">{children}</div>;
 }
 
-function Field({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
+function Field({ label, children, error, hint }: { label: string; children: React.ReactNode; error?: string; hint?: string }) {
   return (
     <div className="grid gap-2">
       <Label>{label}</Label>
       {children}
+      {hint && !error ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
       {error ? <p className="text-xs font-medium text-red-600">{error}</p> : null}
     </div>
   );
@@ -240,7 +281,7 @@ function MoneyInput({ register }: { register: ReturnType<ReturnType<typeof useFo
 function CheckField({ label, register }: { label: string; register: ReturnType<ReturnType<typeof useForm<QuestionnaireInput>>["register"]> }) {
   return (
     <label className="flex min-h-11 items-center gap-3 rounded-lg border bg-background px-3 text-sm font-medium">
-      <input type="checkbox" className="h-4 w-4 accent-emerald-700" {...register} /> {label}
+      <input type="checkbox" className="h-4 w-4 accent-[#9a7046]" {...register} /> {label}
     </label>
   );
 }

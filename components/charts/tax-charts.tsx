@@ -3,7 +3,7 @@
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { chf } from "@/lib/utils";
 
-const colors = ["#1f8a5b", "#255b8a", "#bd7a10", "#e53935", "#6d5bd0"];
+const colors = ["#142844", "#9a7046", "#627084", "#2f6b57", "#d6ba8b"];
 
 export function TaxBreakdownChart({ data }: { data: { name: string; value: number }[] }) {
   return (
@@ -33,7 +33,7 @@ export function CantonComparisonChart({
           <XAxis dataKey="code" />
           <YAxis tickFormatter={(value) => `${Math.round(Number(value) / 1000)}k`} />
           <Tooltip formatter={(value) => chf(Number(value))} labelFormatter={(label) => `Canton ${label}`} />
-          <Bar dataKey="estimatedTax" radius={[6, 6, 0, 0]} fill="#1f8a5b" />
+          <Bar dataKey="estimatedTax" radius={[3, 3, 0, 0]} fill="#142844" />
         </BarChart>
       </ResponsiveContainer>
     </div>

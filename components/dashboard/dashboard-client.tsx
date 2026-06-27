@@ -2,7 +2,7 @@
 
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Download, FileCheck2, Send, Sparkles, TrendingDown } from "lucide-react";
+import { Download, FileCheck2, Loader2, LockKeyhole, Send, ShieldCheck, Sparkles, TrendingDown } from "lucide-react";
 import { CantonComparisonChart, TaxBreakdownChart } from "@/components/charts/tax-charts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ import { questionnaireSchema, QuestionnaireInput } from "@/lib/validators";
 import { chf } from "@/lib/utils";
 
 const fallbackInput: QuestionnaireInput = {
-  residence: { canton: "VD", commune: "Lausanne", nationality: "Suisse", permit: "citizen", religion: "none" },
+  residence: { canton: "VD", postalCode: "1000", commune: "Lausanne", nationality: "Suisse", permit: "citizen", religion: "none" },
   family: { status: "married", partnerIncome: 42000 },
   children: { count: 2, agesText: "4, 8", ages: [4, 8], sharedCustody: false, childcareCosts: 9000 },
   income: { salary: 118000, bonus: 12000, selfEmployed: 0, rental: 0, dividends: 2500, foreign: 0, pensions: 0 },
@@ -28,28 +28,43 @@ export function DashboardClient() {
   const [input, setInput] = useState<QuestionnaireInput>(fallbackInput);
   const [leadSent, setLeadSent] = useState(false);
   const [leadError, setLeadError] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
   const result = useMemo<TaxResult>(() => analyseTax(input), [input]);
 
   useEffect(() => {
-    const raw = localStorage.getItem("optitax:last-input") ?? localStorage.getItem("fiscalai:last-input");
-    if (!raw) return;
-    const parsed = questionnaireSchema.safeParse(JSON.parse(raw));
-    if (parsed.success) setInput(parsed.data);
+    try {
+      const raw = localStorage.getItem("optitax:last-input") ?? localStorage.getItem("fiscalai:last-input");
+      if (!raw) return;
+      const parsed = questionnaireSchema.safeParse(JSON.parse(raw));
+      if (parsed.success) setInput(parsed.data);
+    } catch {
+      localStorage.removeItem("optitax:last-input");
+    }
   }, []);
 
   async function exportPdf() {
-    const response = await fetch("/api/export/pdf", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input)
-    });
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = "rapport-optitax-suisse.pdf";
-    anchor.click();
-    URL.revokeObjectURL(url);
+    setExportError("");
+    setExporting(true);
+    try {
+      const response = await fetch("/api/export/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input)
+      });
+      if (!response.ok) throw new Error("PDF generation failed");
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "rapport-optitax-suisse.pdf";
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      setExportError("Le rapport n’a pas pu être généré. Réessayez dans quelques instants.");
+    } finally {
+      setExporting(false);
+    }
   }
 
   async function requestContact(event: FormEvent<HTMLFormElement>) {
@@ -83,12 +98,10 @@ export function DashboardClient() {
         <Metric title="Économies possibles" value={chf(result.potentialSavings)} icon={TrendingDown} tone="success" />
       </div>
 
-      <Card className="border-amber-200 bg-amber-50/70 dark:border-amber-900 dark:bg-amber-950/20">
+      <Card className="border-copper/25 bg-sand/55 dark:bg-white/[0.03]">
         <CardContent className="flex flex-col justify-between gap-4 pt-5 md:flex-row md:items-center">
-          <p className="text-sm text-muted-foreground">
-            Estimation indicative: OptiTax Suisse n'est pas un conseil fiscal personnalisé. Vérifiez les montants avec les calculateurs officiels ou un expert.
-          </p>
-          <Button onClick={exportPdf} variant="swiss"><Download className="h-4 w-4" /> Export PDF</Button>
+          <div><p className="flex items-center gap-2 text-sm font-semibold"><ShieldCheck className="h-4 w-4 text-copper" /> Simulation indicative et confidentielle</p><p className="mt-1 text-xs text-muted-foreground">Aucun conseil fiscal personnalisé. Vérifiez les montants avec les calculateurs officiels ou un expert.</p>{exportError ? <p role="alert" className="mt-2 text-xs font-semibold text-red-700">{exportError}</p> : null}</div>
+          <Button onClick={exportPdf} variant="swiss" disabled={exporting}>{exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} {exporting ? "Génération..." : "Rapport PDF"}</Button>
         </CardContent>
       </Card>
 
@@ -176,7 +189,7 @@ export function DashboardClient() {
           <CardContent className="space-y-3">
             {result.checklist.map((item) => (
               <label key={item} className="flex gap-3 rounded-lg border bg-muted/30 p-3 text-sm">
-                <input type="checkbox" className="mt-1 h-4 w-4 accent-emerald-700" />
+                <input type="checkbox" className="mt-1 h-4 w-4 accent-[#9a7046]" />
                 <span>{item}</span>
               </label>
             ))}
@@ -202,7 +215,7 @@ export function DashboardClient() {
               <input name="phone" placeholder="Téléphone optionnel" className="h-11 rounded-lg border bg-background px-3 text-sm" />
               <input name="message" placeholder="Message optionnel" className="h-11 rounded-lg border bg-background px-3 text-sm" />
               <label className="flex gap-3 text-sm md:col-span-2">
-                <input name="consent" type="checkbox" required className="mt-1 h-4 w-4 accent-emerald-700" />
+                <input name="consent" type="checkbox" required className="mt-1 h-4 w-4 accent-[#9a7046]" />
                 J'accepte d'être contacté et que ces informations soient enregistrées pour traiter ma demande.
               </label>
               {leadError && <p className="text-sm text-red-600 md:col-span-2">{leadError}</p>}
@@ -216,14 +229,14 @@ export function DashboardClient() {
 }
 
 function Metric({ title, value, icon: Icon, tone }: { title: string; value: string; icon: typeof Sparkles; tone: "primary" | "blue" | "success" }) {
-  const color = tone === "success" ? "text-success" : tone === "blue" ? "text-[#255b8a]" : "text-primary";
+  const color = tone === "success" ? "text-success" : tone === "blue" ? "text-copper" : "text-primary";
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-sm text-muted-foreground">{title}</CardTitle>
         <Icon className={`h-5 w-5 ${color}`} />
       </CardHeader>
-      <CardContent><p className="text-3xl font-black">{value}</p></CardContent>
+      <CardContent><p className="font-display text-3xl font-semibold">{value}</p></CardContent>
     </Card>
   );
 }

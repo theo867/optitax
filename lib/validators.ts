@@ -18,6 +18,10 @@ const optionalText = (max = 1000) =>
 export const questionnaireSchema = z.object({
   residence: z.object({
     canton: z.string().min(2),
+    postalCode: z.preprocess(
+      (value) => (value === null || value === undefined ? "" : String(value).trim()),
+      z.string().regex(/^\d{4}$/, "Le NPA doit contenir 4 chiffres")
+    ).default("1000"),
     commune: requiredText(80, 1),
     nationality: requiredText(80, 2),
     permit: z.enum(["citizen", "C", "B", "G", "L", "other"]),
